@@ -69,10 +69,16 @@ def handle_updates(updates):
             send_message(message, chat)
         elif text.startswith("/"):
             continue
-        elif text.startswith("delete") and text[7:] in items:
-            text = text[7:]
-            if not text:
+        elif text.startswith("delete"):
+            if not text[7:]:
                 break
+            elif text[7:] in items:
+                text = text[7:]
+            elif "*"+text[7:]+"*" in items:
+                text = "*"+text[7:]+"*"
+            else:
+                break
+
             db.delete_item(text, chat)  ##
             items = db.get_items(chat)  ##
             message = "\n".join(items)
