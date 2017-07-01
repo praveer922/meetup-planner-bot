@@ -58,25 +58,40 @@ def handle_updates(updates):
         text = update["message"]["text"]
         chat = update["message"]["chat"]["id"]
         items = db.get_items(chat)  ##
-        if text == "/done":
+        if text == "/delete":
             keyboard = build_keyboard(items)
             send_message("Select an item to delete", chat, keyboard)
         elif text == "/start":
-            send_message("Welcome to your personal To Do list. Send any text to me and I'll store it as an item. Send /done to remove items", chat)
+            send_message("Welcome to your personal To Do list. Start by adding items with add and removing items with delete. Try sending 'add buy eggs'.", chat)
+        elif text == "/list":
+            items = db.get_items(chat)  ##
+            message = "\n".join(items)
+            send_message(message, chat)
         elif text.startswith("/"):
             continue
-        elif text in items:
+        elif text.startswith("delete") and text[7:] in items:
+            text = text[7:]
+            if not text:
+                break
             db.delete_item(text, chat)  ##
             items = db.get_items(chat)  ##
-            keyboard = build_keyboard(items)
-            send_message("Select an item to delete", chat, keyboard)
-        else:
+            message = "\n".join(items)
+            send_message(message, chat)
+        elif text.startswith("add"):
+            text = text[4:]
             db.add_item(text, chat)  ##
+            items = db.get_items(chat)  ##
+            message = "\n".join(items)
+            send_message(message, chat)
+        elif text.startswith("pin"):
+            text = text[4:]
+            db.edit_item_text(text, "*"+text+"*", chat)  ##
             items = db.get_items(chat)  ##
             message = "\n".join(items)
             send_message(message, chat)
 
 def send_message(text, chat_id, reply_markup=None):
+    text = "*#### TO-DO LIST ####*\n" + text
     text = urllib.parse.quote_plus(text)
     url = URL + "sendMessage?text={}&chat_id={}&parse_mode=Markdown".format(text, chat_id)
     if reply_markup:
@@ -85,7 +100,7 @@ def send_message(text, chat_id, reply_markup=None):
 
 
 def build_keyboard(items):
-    keyboard = [[item] for item in items]
+    keyboard = [["delete " +item] for item in items]
     reply_markup = {"keyboard":keyboard, "one_time_keyboard": True}
     return json.dumps(reply_markup)
 

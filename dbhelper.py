@@ -31,3 +31,9 @@ class DBHelper:
         stmt = "SELECT description FROM items WHERE owner = (?)"
         args = (owner, )
         return [x[0] for x in self.conn.execute(stmt, args)]
+
+    def edit_item_text(self, item_text,new_item_text,owner):
+        stmt = "UPDATE items SET description = (?) WHERE description = (?) AND owner = (?)"
+        args = (new_item_text, item_text, owner )
+        self.conn.execute(stmt, args)
+        self.conn.commit()
