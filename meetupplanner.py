@@ -61,6 +61,8 @@ def handle_updates(updates):
             break
         text = update["message"]["text"]
         chat = update["message"]["chat"]["id"]
+        userid = update["message"]["from"]["id"]
+        username = update["message"]["from"]["first_name"]
         items = db.get_items(chat)  ##
         if text == "/del" or text == "/delete":
             keyboard = build_keyboard(items)
@@ -76,6 +78,12 @@ def handle_updates(updates):
             send_todo_list_message(message, chat)
         elif text == "/quote":
             send_random_quote(chat)
+        elif db.meetup_started and text == "/new":
+            send_message("A meetup has already started! Use /show to view or /join to participate", chat)
+        elif not db.meetup_started and text == "/new":
+            db.meetup_started = True
+            db.add_user(userid, username)
+            send_message(username + " has started a new meetup! /join to participate.", chat)
         elif text.startswith("/"):
             continue
         elif text.startswith("delete") or text.startswith("Delete") or text.endswith("done") or text.endswith("Done"):
