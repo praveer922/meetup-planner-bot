@@ -64,7 +64,10 @@ def handle_updates(updates):
             keyboard = build_keyboard(items)
             send_message("Select an item to delete", chat, keyboard)
         elif text == "/start":
-            send_message("Welcome to your personal To Do list. Start by adding items with add and removing items with delete. Try sending 'add buy eggs'.", chat)
+            send_message("YO BITCHES welcome to my bot. /help for updated list of features.", chat)
+        elif text == "/help":
+            send_message(
+            "*TO-DO LIST*\n_Keep a peronal to do list in the chat._\n\nAdd items with add and remove items with delete.\nComplete items with done.\nYou can also use /del or /delete to remove multiple items.\nPin important items with pin.\nShow your current to-do list with /list.\nTry sending 'add group outing' and then 'group outing done'.\n\n*Random Quote*\nUse /quote to get a random quote.", chat)
         elif text == "/list":
             items = db.get_items(chat)  ##
             message = "\n".join(items)
@@ -73,13 +76,15 @@ def handle_updates(updates):
             send_random_quote(chat)
         elif text.startswith("/"):
             continue
-        elif text.startswith("delete") or text.startswith("Delete"):
+        elif text.startswith("delete") or text.startswith("Delete") or text.endswith("done") or text.endswith("Done"):
             if not text[7:]:
                 break
             elif text[7:] in items:
                 text = text[7:]
             elif "*"+text[7:]+"*" in items:
                 text = "*"+text[7:]+"*"
+            elif text[:-5] in items:
+                text = text[:-5]
             else:
                 break
 
