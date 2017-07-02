@@ -90,6 +90,8 @@ def handle_updates(updates):
             if username not in users:
                 db.add_user(userid, username, chat)
             send_message(username + " has joined! Yay!", chat)
+            if len(db.get_users_names(chat)) == 2:
+                send_message("When you all free? Tell me the dates", chat)
         elif text == "/join" and not db.meetup_started:
             send_message("There is no meetup yet! /new to start one now.", chat)
         elif text == "/show" and db.meetup_started:
