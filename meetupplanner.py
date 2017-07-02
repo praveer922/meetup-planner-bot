@@ -57,6 +57,8 @@ def echo_all(updates):
 
 def handle_updates(updates):
     for update in updates["result"]:
+        if "text" not in update["message"]:
+            break
         text = update["message"]["text"]
         chat = update["message"]["chat"]["id"]
         items = db.get_items(chat)  ##
