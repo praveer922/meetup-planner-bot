@@ -2,6 +2,8 @@ import json
 import requests
 import time
 import urllib
+import random
+import os
 
 from dbhelper import DBHelper
 
@@ -58,7 +60,7 @@ def handle_updates(updates):
         text = update["message"]["text"]
         chat = update["message"]["chat"]["id"]
         items = db.get_items(chat)  ##
-        if text == "/delete":
+        if text == "/del" or text == "/delete":
             keyboard = build_keyboard(items)
             send_message("Select an item to delete", chat, keyboard)
         elif text == "/start":
@@ -66,10 +68,12 @@ def handle_updates(updates):
         elif text == "/list":
             items = db.get_items(chat)  ##
             message = "\n".join(items)
-            send_message(message, chat)
+            send_todo_list_message(message, chat)
+        elif text == "/quote":
+            send_random_quote(chat)
         elif text.startswith("/"):
             continue
-        elif text.startswith("delete"):
+        elif text.startswith("delete") or text.startswith("Delete"):
             if not text[7:]:
                 break
             elif text[7:] in items:
@@ -82,33 +86,48 @@ def handle_updates(updates):
             db.delete_item(text, chat)  ##
             items = db.get_items(chat)  ##
             message = "\n".join(items)
-            send_message(message, chat)
-        elif text.startswith("add"):
+            send_todo_list_message(message, chat)
+        elif text.startswith("add") or text.startswith("Add"):
             text = text[4:]
             db.add_item(text, chat)  ##
             items = db.get_items(chat)  ##
             message = "\n".join(items)
-            send_message(message, chat)
-        elif text.startswith("pin"):
+            send_todo_list_message(message, chat)
+        elif text.startswith("pin") or text.startswith("Pin"):
             text = text[4:]
             db.edit_item_text(text, "*"+text+"*", chat)  ##
             items = db.get_items(chat)  ##
             message = "\n".join(items)
-            send_message(message, chat)
+            send_todo_list_message(message, chat)
 
-def send_message(text, chat_id, reply_markup=None):
-    text = "*#### TO-DO LIST ####*\n" + text
-    text = urllib.parse.quote_plus(text)
-    url = URL + "sendMessage?text={}&chat_id={}&parse_mode=Markdown".format(text, chat_id)
-    if reply_markup:
-        url += "&reply_markup={}".format(reply_markup)
-    get_url(url)
+
 
 
 def build_keyboard(items):
     keyboard = [["delete " +item] for item in items]
     reply_markup = {"keyboard":keyboard, "one_time_keyboard": True}
     return json.dumps(reply_markup)
+
+def send_random_quote(chat):
+    quote_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'quotes.txt')
+    f = open(quote_file, 'r')
+    txt = f.read()
+    lines = txt.split('\n.\n')
+
+    message = random.choice(lines)
+    send_message(message,chat)
+
+def send_todo_list_message(text,chat_id, reply_markup=None):
+    text = "*#### TO-DO LIST ####*\n" + text
+    send_message(text,chat_id,reply_markup)
+
+def send_message(text, chat_id, reply_markup=None):
+    text = urllib.parse.quote_plus(text)
+    url = URL + "sendMessage?text={}&chat_id={}&parse_mode=Markdown".format(text, chat_id)
+    if reply_markup:
+        url += "&reply_markup={}".format(reply_markup)
+    get_url(url)
+
 
 
 def main():
