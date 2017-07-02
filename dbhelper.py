@@ -9,7 +9,7 @@ class DBHelper:
 
     def setup(self):
          todo_tblstmt = "CREATE TABLE IF NOT EXISTS items (description text, owner text)"
-         meetup_tbltstmt = "CREATE TABLE IF NOT EXISTS meetup_users (userid int, name text, free_dates text)"
+         meetup_tbltstmt = "CREATE TABLE IF NOT EXISTS meetup_users (userid int, name text, free_dates text, owner text)"
          itemidx = "CREATE INDEX IF NOT EXISTS itemIndex ON items (description ASC)"
          ownidx = "CREATE INDEX IF NOT EXISTS ownIndex ON items (owner ASC)"
          self.conn.execute(todo_tblstmt)
@@ -41,8 +41,13 @@ class DBHelper:
         self.conn.execute(stmt, args)
         self.conn.commit()
 
-    def add_user(self, userid, username):
-        stmt = "INSERT INTO meetup_users (userid,name) VALUES (?, ?)"
-        args = (userid,username)
+    def add_user(self, userid, username, owner):
+        stmt = "INSERT INTO meetup_users (userid,name,owner) VALUES (?, ?, ?)"
+        args = (userid,username, owner)
         self.conn.execute(stmt, args)
         self.conn.commit()
+
+    def get_users_names(self, owner):
+        stmt = "SELECT name FROM meetup_users WHERE owner = (?)"
+        args = (owner, )
+        return [x[0] for x in self.conn.execute(stmt, args)]

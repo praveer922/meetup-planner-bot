@@ -63,7 +63,8 @@ def handle_updates(updates):
         chat = update["message"]["chat"]["id"]
         userid = update["message"]["from"]["id"]
         username = update["message"]["from"]["first_name"]
-        items = db.get_items(chat)  ##
+        items = db.get_items(chat)
+        users = db.get_users_names(chat)  ##
         if text == "/del" or text == "/delete":
             keyboard = build_keyboard(items)
             send_message("Select an item to delete", chat, keyboard)
@@ -78,12 +79,25 @@ def handle_updates(updates):
             send_todo_list_message(message, chat)
         elif text == "/quote":
             send_random_quote(chat)
-        elif db.meetup_started and text == "/new":
+        elif text == "/new" and db.meetup_started:
             send_message("A meetup has already started! Use /show to view or /join to participate", chat)
-        elif not db.meetup_started and text == "/new":
+        elif text == "/new" and not db.meetup_started:
             db.meetup_started = True
-            db.add_user(userid, username)
+            if username not in users:
+                db.add_user(userid, username, chat)
             send_message(username + " has started a new meetup! /join to participate.", chat)
+        elif text == "/join" and db.meetup_started:
+            if username not in users:
+                db.add_user(userid, username, chat)
+            send_message(username + " has joined! Yay!", chat)
+        elif text == "/join" and not db.meetup_started:
+            send_message("There is no meetup yet! /new to start one now.", chat)
+        elif text == "/show" and db.meetup_started:
+            users = db.get_users_names(chat)
+            message = "\n".join(users)
+            send_meetup_message(message, chat)
+        elif text == "/show" and not db.meetup_started:
+            send_message("There is no meetup yet! /new to start one now.", chat)
         elif text.startswith("/"):
             continue
         elif text.startswith("delete") or text.startswith("Delete") or text.endswith("done") or text.endswith("Done"):
@@ -134,6 +148,10 @@ def send_random_quote(chat):
 
 def send_todo_list_message(text,chat_id, reply_markup=None):
     text = "*#### TO-DO LIST ####*\n" + text
+    send_message(text,chat_id,reply_markup)
+
+def send_meetup_message(text,chat_id, reply_markup=None):
+    text = "*#### MEETUP ####*\n" + text
     send_message(text,chat_id,reply_markup)
 
 def send_message(text, chat_id, reply_markup=None):
