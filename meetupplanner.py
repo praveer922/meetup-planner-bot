@@ -5,6 +5,10 @@ import urllib
 import random
 import os
 
+from datetime import datetime
+import parsedatetime as pdt
+from daterangeparser import parse
+
 from dbhelper import DBHelper
 
 db = DBHelper()
@@ -56,6 +60,7 @@ def echo_all(updates):
             print(e)
 
 def handle_updates(updates):
+    cal = pdt.Calendar()
     for update in updates["result"]:
         if "text" not in update["message"]:
             break
@@ -130,6 +135,15 @@ def handle_updates(updates):
             items = db.get_items(chat)  ##
             message = "\n".join(items)
             send_todo_list_message(message, chat)
+        else:
+            time_struct, parse_status = cal.parse(text)
+            dt = datetime(*time_struct[:6])
+            send_message(dt.strftime("%B %d, %Y"),chat)
+
+            start, end = parse(text)
+            print("Start = " + start.strftime("%B %d, %Y"))
+            print("End = " + end.strftime("%B %d, %Y"))
+
 
 
 
