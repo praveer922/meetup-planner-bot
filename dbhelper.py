@@ -42,8 +42,8 @@ class DBHelper:
         self.conn.commit()
 
     def add_user(self, userid, username, owner):
-        stmt = "INSERT INTO meetup_users (userid,name,owner) VALUES (?, ?, ?)"
-        args = (userid,username, owner)
+        stmt = "INSERT INTO meetup_users (userid,name, free_dates, owner) VALUES (?, ?, ?, ?)"
+        args = (userid,username, "", owner)
         self.conn.execute(stmt, args)
         self.conn.commit()
 
@@ -51,3 +51,19 @@ class DBHelper:
         stmt = "SELECT name FROM meetup_users WHERE owner = (?)"
         args = (owner, )
         return [x[0] for x in self.conn.execute(stmt, args)]
+
+    def get_users_names_and_free_dates(self, owner):
+        stmt = "SELECT name, free_dates FROM meetup_users WHERE owner = (?)"
+        args = (owner, )
+        return [x for x in self.conn.execute(stmt, args)]
+
+    def append_date_to_user(self,username,date,owner):
+        stmt = "SELECT free_dates FROM meetup_users WHERE name = (?) AND owner = (?)"
+        args = (username, owner)
+        for x in self.conn.execute(stmt, args):
+            current_dates = x[0]
+        new_dates = current_dates + ", " + date
+        stmt = "UPDATE meetup_users SET free_dates = (?) WHERE name = (?) AND owner = (?)"
+        args = (new_dates, username, owner )
+        self.conn.execute(stmt, args)
+        self.conn.commit()

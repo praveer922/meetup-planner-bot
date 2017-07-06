@@ -4,6 +4,7 @@ import time
 import urllib
 import random
 import os
+import traceback
 
 from datetime import datetime
 import parsedatetime as pdt
@@ -60,7 +61,6 @@ def echo_all(updates):
             print(e)
 
 def handle_updates(updates):
-    cal = pdt.Calendar()
     for update in updates["result"]:
         if "text" not in update["message"]:
             break
@@ -100,13 +100,27 @@ def handle_updates(updates):
         elif text == "/join" and not db.meetup_started:
             send_message("There is no meetup yet! /new to start one now.", chat)
         elif text == "/show" and db.meetup_started:
-            users = db.get_users_names(chat)
-            message = "\n".join(users)
+            usersAndTheirFreeDates = db.get_users_names_and_free_dates(chat)
+            usersAndTheirFreeDatesString = []
+            for x in usersAndTheirFreeDates:
+                usersAndTheirFreeDatesString.append(x[0] + " " + x[1])
+            message = "\n".join(usersAndTheirFreeDatesString)
             send_meetup_message(message, chat)
         elif text == "/show" and not db.meetup_started:
             send_message("There is no meetup yet! /new to start one now.", chat)
         elif text.startswith("/"):
             continue
+        elif isRangeOfDates(text):
+            try:
+                start, end = parseRangeOfDates(text)
+                send_message("Start = " + start.strftime("%B %d, %Y") + " End = " + end.strftime("%B %d, %Y"), chat)
+                db.append_date_to_user(username, text, chat)
+            except:
+                traceback.print_exc()
+        elif isSingleDate(text):
+            dt = parseSingleDate(text)
+            send_message(dt.strftime("%B %d, %Y"),chat)
+            db.append_date_to_user(username, text, chat)
         elif text.startswith("delete") or text.startswith("Delete") or text.endswith("done") or text.endswith("Done"):
             if not text[7:]:
                 break
@@ -135,18 +149,33 @@ def handle_updates(updates):
             items = db.get_items(chat)  ##
             message = "\n".join(items)
             send_todo_list_message(message, chat)
-        else:
-            time_struct, parse_status = cal.parse(text)
-            dt = datetime(*time_struct[:6])
-            send_message(dt.strftime("%B %d, %Y"),chat)
-
-            start, end = parse(text)
-            print("Start = " + start.strftime("%B %d, %Y"))
-            print("End = " + end.strftime("%B %d, %Y"))
 
 
+def isSingleDate(text):
+    return parseSingleDate(text).date() != datetime.today().date()
 
+def isRangeOfDates(text):
+    if "-" in text:
+        possibleDates = text.split("-")
+        lastDate = possibleDates[len(possibleDates)-1]
+        if(isSingleDate(lastDate)):
+            return True
+    elif "to" in text:
+        possibleDates = text.split("to")
+        lastDate = possibleDates[len(possibleDates)-1]
+        if(isSingleDate(lastDate)):
+            return True
+    else:
+        return False
 
+def parseSingleDate(text):
+    cal = pdt.Calendar()
+    time_struct, parse_status = cal.parse(text)
+    dt = datetime(*time_struct[:6])
+    return dt
+
+def parseRangeOfDates(text):
+    return parse(text)
 
 def build_keyboard(items):
     keyboard = [["delete " +item] for item in items]
