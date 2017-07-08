@@ -160,7 +160,23 @@ def getBestDate(chat):
         freeDatesOfUsersArray.append(dates)
     earliestDate = getEarliestDate(freeDatesOfUsersArray)
     lastDate = getLastDate(freeDatesOfUsersArray)
-    ##to do make date matrix
+    dateMatrix = createDateMatrix(earliestDate,lastDate,chat)
+    for x in freeDatesOfUsersArray:
+        #x is string of dates of a single user, update matrix array with these dates
+
+def createDateMatrix(earliestDate,lastDate,chat):
+    delta = lastDate - earliestDate
+    w = delta.days
+    h = getNumUsers(chat)
+    dateMatrix = [[0 for x in range(w)] for y in range(h)]
+    return dateMatrix
+
+def getNumUsers(chat):
+    users = db.get_users_names(chat)
+    count = 0
+    for x in users:
+        count++
+    return count
 
 def getEarliestDate(freeDatesOfUsersArray):
     firstDate = datetime.today().replace(year = 2100)
