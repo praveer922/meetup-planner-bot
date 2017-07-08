@@ -103,7 +103,8 @@ def handle_updates(updates):
             usersAndTheirFreeDates = db.get_users_names_and_free_dates(chat)
             usersAndTheirFreeDatesString = []
             for x in usersAndTheirFreeDates:
-                usersAndTheirFreeDatesString.append(x[0] + " " + x[1])
+                dates = x[1].replace(",", "-", 1)
+                usersAndTheirFreeDatesString.append(x[0] + " _" + dates +"_")
             message = "\n".join(usersAndTheirFreeDatesString)
             send_meetup_message(message, chat)
         elif text == "/show" and not db.meetup_started:
@@ -113,14 +114,15 @@ def handle_updates(updates):
         elif isRangeOfDates(text):
             try:
                 start, end = parseRangeOfDates(text)
-                send_message("Start = " + start.strftime("%B %d, %Y") + " End = " + end.strftime("%B %d, %Y"), chat)
+                send_message("Start = " + start.strftime("%d %B %Y") + " End = " + end.strftime("%d %B %Y"), chat)
                 db.append_date_to_user(username, text, chat)
             except:
                 traceback.print_exc()
         elif isSingleDate(text):
             dt = parseSingleDate(text)
-            send_message(dt.strftime("%B %d, %Y"),chat)
-            db.append_date_to_user(username, text, chat)
+            stringDt = dt.strftime("%d %B %Y")
+            send_message(stringDt,chat)
+            db.append_date_to_user(username, stringDt, chat)
         elif text.startswith("delete") or text.startswith("Delete") or text.endswith("done") or text.endswith("Done"):
             if not text[7:]:
                 break
@@ -150,6 +152,49 @@ def handle_updates(updates):
             message = "\n".join(items)
             send_todo_list_message(message, chat)
 
+def getBestDate(chat):
+    usersAndTheirFreeDates = db.get_users_names_and_free_dates(chat)
+    freeDatesOfUsersArray = []
+    for x in usersAndTheirFreeDates:
+        dates = x[1].replace(", ", "", 1)
+        freeDatesOfUsersArray.append(dates)
+    earliestDate = getEarliestDate(freeDatesOfUsersArray)
+    lastDate = getLastDate(freeDatesOfUsersArray)
+    ##to do make date matrix
+
+def getEarliestDate(freeDatesOfUsersArray):
+    firstDate = datetime.today().replace(year = 2100)
+    for dates in freeDatesOfUsersArray:
+        firstDateOfUser = getFirstDateOfSingleUser(dates)
+        if firstDateOfUser.date() < firstDate.date():
+            firstDate = firstDateOfUser
+    return firstDate
+
+def getFirstDateOfSingleUser(dates):
+    arrayOfDates = dates.split(",")
+    firstDate = datetime.today().replace(year = 2100)
+    for x in arrayOfDates:
+        date = parseSingleDate(x)
+        if date.date() < firstDate.date():
+            firstDate = date
+    return firstDate
+
+def getLastDate(freeDatesOfUsersArray):
+    lastDate = datetime.today()
+    for dates in freeDatesOfUsersArray:
+        lastDateofUser = getLastDateOfSingleUser(dates)
+        if lastDateofUser.date() > lastDate.date():
+            lastDate = lastDateofUser
+    return lastDate
+
+def getLastDateOfSingleUser(dates):
+    arrayOfDates = dates.split(",")
+    lastDate = datetime.today()
+    for x in arrayOfDates:
+        date = parseSingleDate(x)
+        if date.date() > lastDate.date():
+            lastDate = date
+    return lastDate
 
 def isSingleDate(text):
     return parseSingleDate(text).date() != datetime.today().date()
