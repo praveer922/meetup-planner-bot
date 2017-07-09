@@ -107,7 +107,10 @@ def handle_updates(updates):
                 usersAndTheirFreeDatesString.append(x[0] + " _" + dates +"_")
             message = "\n".join(usersAndTheirFreeDatesString)
             send_meetup_message(message, chat)
-            bestDateString = getBestDate(chat).strftime("%d %B %Y")
+            try:
+                bestDateString = getBestDate(chat).strftime("%d %B %Y")
+            except:
+                traceback.print_exc()
             send_message("Ok lah, you all meet up " + bestDateString + " lah", chat)
         elif text == "/show" and not db.meetup_started:
             send_message("There is no meetup yet! /new to start one now.", chat)
@@ -190,9 +193,6 @@ def calculateMaxOccurenceFromDateMatrix(dateMatrix):
 
 def updateMatrix(dateMatrix,date, earliestDate, user):
     delta = date - earliestDate
-    print(len(dateMatrix))
-    print(len(dateMatrix[0]))
-    print(delta.days)
     dateMatrix[user][delta.days] = 1
     return dateMatrix
 
