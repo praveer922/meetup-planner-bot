@@ -6,7 +6,7 @@ import random
 import os
 import traceback
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import parsedatetime as pdt
 from daterangeparser import parse
 
@@ -107,6 +107,8 @@ def handle_updates(updates):
                 usersAndTheirFreeDatesString.append(x[0] + " _" + dates +"_")
             message = "\n".join(usersAndTheirFreeDatesString)
             send_meetup_message(message, chat)
+            bestDateString = getBestDate(chat).strftime("%d %B %Y")
+            send_message("Ok lah, you all meet up " + bestDateString + " lah", chat)
         elif text == "/show" and not db.meetup_started:
             send_message("There is no meetup yet! /new to start one now.", chat)
         elif text.startswith("/"):
@@ -161,12 +163,42 @@ def getBestDate(chat):
     earliestDate = getEarliestDate(freeDatesOfUsersArray)
     lastDate = getLastDate(freeDatesOfUsersArray)
     dateMatrix = createDateMatrix(earliestDate,lastDate,chat)
+    counter = 0
     for x in freeDatesOfUsersArray:
         #x is string of dates of a single user, update matrix array with these dates
+        arrayOfDates = x.split(",")
+        for y in arrayOfDates:
+            date = parseSingleDate(y)
+            dateMatrix = updateMatrix(dateMatrix,date, earliestDate, counter)
+        counter = counter +1
+    bestDateIndex = calculateMaxOccurenceFromDateMatrix(dateMatrix)
+    return earliestDate + timedelta(days=bestDateIndex)
+
+def calculateMaxOccurenceFromDateMatrix(dateMatrix):
+    maxCount = 0
+    best_i = 0
+    for i in range(0,len(dateMatrix[0])):
+        count = 0
+        for j in range(0, len(dateMatrix)):
+            if dateMatrix[j][i] == 1:
+                count = count +1
+        if count > maxCount:
+            maxCount = count
+            best_i = i
+    return best_i
+
+
+def updateMatrix(dateMatrix,date, earliestDate, user):
+    delta = date - earliestDate
+    print(len(dateMatrix))
+    print(len(dateMatrix[0]))
+    print(delta.days)
+    dateMatrix[user][delta.days] = 1
+    return dateMatrix
 
 def createDateMatrix(earliestDate,lastDate,chat):
     delta = lastDate - earliestDate
-    w = delta.days
+    w = delta.days + 1
     h = getNumUsers(chat)
     dateMatrix = [[0 for x in range(w)] for y in range(h)]
     return dateMatrix
@@ -175,7 +207,7 @@ def getNumUsers(chat):
     users = db.get_users_names(chat)
     count = 0
     for x in users:
-        count++
+        count = count +1
     return count
 
 def getEarliestDate(freeDatesOfUsersArray):
